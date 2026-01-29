@@ -1,0 +1,15 @@
+{
+    "date": "2026-01-29",
+    "regime": {
+        "status": "Normal",
+        "rate_z": 0.22,
+        "cpi_z": -0.67
+    },
+    "weights": {
+        "VALUE": 0.8382435637272776,
+        "MOM": 0.0,
+        "LOWVOL": 0.0,
+        "QUALITY": 0.16175643627272235
+    },
+    "portfolio": []
+}
