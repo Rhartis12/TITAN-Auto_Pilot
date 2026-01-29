@@ -1,4 +1,3 @@
-# main_kr.py
 import pandas as pd
 import numpy as np
 import yfinance as yf
@@ -9,6 +8,7 @@ import warnings
 import json
 import FinanceDataReader as fdr
 from datetime import datetime
+import time # sleep용
 
 warnings.filterwarnings("ignore")
 
@@ -17,7 +17,7 @@ warnings.filterwarnings("ignore")
 # ============================================================
 START_DATE = "2000-01-01"
 REBAL_FREQ = "ME"
-ECOS_KEY = os.getenv("ECOS_KEY")
+ECOS_KEY = os.getenv("ECOS_KEY", "N671R802ZP944AEQ5J53") 
 CACHE_FILE = "krx_yfinance_cache.pkl"
 
 # 매크로 및 전략 설정
@@ -60,15 +60,30 @@ rate_series = fetch_ecos_long("721Y001", "5050000", "200001")
 cpi_series = fetch_ecos_long("901Y009", "0", "198001")
 
 # ============================================================
-# 3. PRICE DATA LOADING
+# 3. PRICE & SECTOR LOADING (Modified)
 # ============================================================
 print("🔄 Loading Stock Data...")
-# GitHub Actions에서는 매번 새로 받는게 안전하므로 캐시 로직 간소화
 df_krx = fdr.StockListing('KRX')
 df_kospi = df_krx[df_krx['Market'] == 'KOSPI'].sort_values('Marcap', ascending=False).head(200)
 tickers = [f"{code}.KS" for code in df_kospi['Code']]
-sector_map = {f"{c}.KS": s if pd.notna(s) else "Unknown" for c, s in zip(df_kospi['Code'], df_kospi['Sector'])}
 
+# [수정] 섹터 정보를 yfinance에서 직접 가져옴
+print("   - Fetching Sectors from YFinance (Slow)...")
+sector_map = {}
+for i, t in enumerate(tickers):
+    try:
+        # yfinance에서 섹터 정보 조회
+        info = yf.Ticker(t).info
+        sec = info.get('sector', 'Unknown')
+        sector_map[t] = sec
+    except:
+        sector_map[t] = 'Unknown'
+    
+    # 차단 방지를 위한 딜레이 및 로그
+    if i % 50 == 0: print(f"     ... {i}/{len(tickers)}")
+    time.sleep(0.1)
+
+# Price Download
 price = yf.download(tickers, start=START_DATE, progress=False)['Close']
 if isinstance(price.columns, pd.MultiIndex):
     price.columns = price.columns.get_level_values(-1)
@@ -163,7 +178,6 @@ buy_list = pd.DataFrame({
     'Score': candidates.values,
     'Sector': [sector_map.get(t, 'Unknown') for t in candidates.index],
     'Price': [latest_prices.get(t, 0) for t in candidates.index],
-    # 한국은 섹터 중립보다는 단순 점수 비중이 나을 수 있으나, 일관성을 위해 1/N 적용
     'Weight': [1.0/len(candidates)] * len(candidates) 
 })
 
@@ -183,7 +197,7 @@ web_data = {
 
 for _, row in buy_list.iterrows():
     web_data["portfolio"].append({
-        "ticker": row['Ticker'].replace(".KS", ""), # .KS 제거해서 보기 좋게
+        "ticker": row['Ticker'].replace(".KS", ""),
         "sector": row['Sector'],
         "price": row['Price'],
         "weight": row['Weight']
