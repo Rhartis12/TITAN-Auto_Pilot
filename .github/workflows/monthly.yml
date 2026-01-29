@@ -1,8 +1,8 @@
-name: Titan Monthly Rebalance
+name: Titan Auto-Trade
 
 on:
   schedule:
-    # 매월 1일 오전 9시 (한국시간) 실행 = UTC 0시
+    # 매월 1일 UTC 00:00 (한국시간 오전 9:00)
     - cron: '0 0 1 * *'
   workflow_dispatch: # 수동 실행 버튼
 
@@ -10,7 +10,7 @@ permissions:
   contents: write
 
 jobs:
-  build:
+  run-strategy:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -23,21 +23,27 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install pandas numpy yfinance fredapi scipy lxml requests
+          pip install pandas numpy yfinance fredapi scipy lxml requests openpyxl
 
-      - name: Run Strategy
+      - name: Run Titan Strategy
         env:
-          FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
+          FRED_KEY: ${{ secrets.FRED_KEY }}
           TG_TOKEN: ${{ secrets.TG_TOKEN }}
           TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
-          GITHUB_REPOSITORY: ${{ github.repository }}
-          GITHUB_REPOSITORY_OWNER: ${{ github.repository_owner }}
         run: python main.py
 
+      # [디버깅용] 파일이 진짜 생겼는지 리스트 확인
+      - name: Check Generated Files
+        run: ls -R
+
+      # [수정됨] 모든 변경사항(results 폴더 포함) 자동 반영
       - name: Commit and Push Data
         run: |
           git config --global user.name "TitanBot"
           git config --global user.email "bot@titan.com"
-          git add Buy_List.csv Full_Scores.csv IC_Factors.csv dashboard_data.json
-          git commit -m "📈 Monthly Update: $(date +'%Y-%m-%d')" || exit 0
-          git push
+          
+          # 현재 폴더의 모든 변경사항(새 폴더, 새 파일, 수정된 파일) 스테이징
+          git add .
+          
+          # 변경사항이 있을 때만 커밋 (에러 방지)
+          git diff --quiet && git diff --staged --quiet || (git commit -m "📈 Auto Update: $(date +'%Y-%m-%d')" && git push)
