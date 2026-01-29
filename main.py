@@ -9,6 +9,7 @@ import warnings
 import time
 from datetime import datetime
 import json
+from io import StringIO # 추가됨
 
 warnings.filterwarnings("ignore")
 
@@ -193,13 +194,23 @@ mult = pd.DataFrame(1.0, index=ic_df.index, columns=ic_df.columns)
 # Titan V6.9 Logic
 Z_THRESH = 0.5
 for t in mult.index:
-    r_z, c_z = macro_z.loc[t, "RATE"], macro_z.loc[t, "CPI"]
+    try:
+        r_z, c_z = macro_z.loc[t, "RATE"], macro_z.loc[t, "CPI"]
+    except: continue
+    
     if (r_z > Z_THRESH) and (c_z > Z_THRESH): mult.loc[t, :] = [1.2, 0.0, 1.5, 1.5]
     elif (r_z < -Z_THRESH): mult.loc[t, :] = [0.5, 0.0, 1.0, 1.5]
     elif (r_z > Z_THRESH) and (c_z < 0): mult.loc[t, ["VALUE", "MOM"]] = [1.5, 0.8]
 
 w_final = (ic_df * mult).clip(lower=0)
 w_final = w_final.div(w_final.sum(axis=1).replace(0, 1), axis=0).fillna(0)
+
+# [수정 시작] 지난달 데이터로 이번 달 종목 선정 (Look-Ahead Bias 방지)
+# w_final은 t시점의 데이터를 보고 t+1시점(다음달)에 적용할 비중을 결정함
+# 따라서 마지막 행(이번달)에는 아직 다음달 수익률이 없어서 값이 비어있을 수 있음
+# 이를 방지하기 위해 ffill()로 '직전 달에 결정된 최적 비중'을 이번 달에도 적용
+w_final = w_final.reindex(ret.index).ffill()
+# [수정 끝]
 
 # Build Portfolio & 100% Allocation Logic
 score = pd.DataFrame(0.0, index=ret.index, columns=ret.columns)
@@ -243,34 +254,37 @@ today = datetime.now()
 month_str = today.strftime("%Y-%m")      # 예: 2026-01
 date_str = today.strftime("%Y-%m-%d")    # 예: 2026-01-30
 
-# [중요] 최신 Buy List 생성 (비중 0 초과 종목만)
+# [수정 시작] 최신 Buy List 생성 시점 명확화
+# alloc.iloc[-1]은 '지난달 말일' 데이터까지 고려하여 결정된 '이번 달' 포트폴리오 비중임
+# 즉, 매월 1일에 실행하면 '어제(말일)까지의 데이터로 정해진 오늘 살 종목'이 나옴
 latest_weights = alloc.iloc[-1]
 active_weights = latest_weights[latest_weights > 0]
 latest_prices_series = price.iloc[-1] 
+# [수정 끝]
 
 buy_list = pd.DataFrame({
     'Ticker': active_weights.index,
     'Weight': active_weights.values,
     'Sector': [SECTOR_MAP.get(t, 'N/A') for t in active_weights.index],
     'Score': [score.iloc[-1][t] for t in active_weights.index],
-    'Price': [latest_prices_series.get(t, 0.0) for t in active_weights.index]
+    'Price': [latest_prices_series.get(t, 0.0) for t in active_weights.index] # HTML 계산기용 가격 추가
 }).sort_values('Weight', ascending=False)
 
-# 📂 폴더 생성 (results/2026-01/)
+# 결과 저장 폴더 생성 (results/2026-01/)
 base_dir = f"results/{month_str}"
 os.makedirs(base_dir, exist_ok=True)
 
-# 📄 파일 경로 정의
+# 파일 경로 정의
 buy_list_path = f"{base_dir}/Buy_List_{date_str}.csv"
 scores_path = f"{base_dir}/Full_Scores_{date_str}.csv"
-ic_path = f"{base_dir}/IC_Factors_{date_str}.csv"
+ic_path = f"{base_dir}/IC_Factors_{date_str}.csv" # IC 파일 추가
 weights_path = f"{base_dir}/Weights_{date_str}.csv"
 returns_path = f"{base_dir}/Returns_{date_str}.csv"
 
-# 💾 CSV 파일 저장 (기록용)
+# 파일 저장
 buy_list.to_csv(buy_list_path, index=False)
 score.to_csv(scores_path)
-ic_df.to_csv(ic_path)
+ic_df.to_csv(ic_path) # IC 저장
 w_final.to_csv(weights_path)
 final_ret.to_csv(returns_path)
 
@@ -297,7 +311,7 @@ for idx, row in buy_list.iterrows():
     })
 
 # 3. 팩터 비중
-current_factor_weights = w_final.iloc[-1].to_dict()
+current_factor_weights = w_final.iloc[-1].to_dict() # {VALUE:..., MOM:...}
 
 # 4. JSON 생성
 web_data = {
@@ -311,15 +325,17 @@ web_data = {
     "portfolio": portfolio_json
 }
 
-# [🚨 핵심 수정] 웹사이트가 읽을 수 있게 Root 폴더에도 저장
+# [수정 시작] JSON 저장 경로 수정
+# 1. Root 폴더에 저장 (웹사이트 연동용)
 with open("dashboard_data.json", "w") as f:
     json.dump(web_data, f, indent=4)
 
-# 기록용 폴더에도 저장
+# 2. 기록용 폴더에 저장 (백업용)
 with open(f"{base_dir}/dashboard_data.json", "w") as f:
     json.dump(web_data, f, indent=4)
+# [수정 끝]
 
-print("✅ Dashboard JSON generated.")
+print(f"✅ Dashboard JSON saved.")
 
 # ------------------------------------------------------------
 # 📨 Telegram Notification
@@ -333,15 +349,15 @@ def send_file(path, caption):
         print(f"❌ File upload failed ({path}): {e}")
 
 if TG_TOKEN and TG_CHAT_ID:
-    # 메시지 전송
+    # Summary Message
     requests.post(f"https://api.telegram.org/bot{TG_TOKEN}/sendMessage", 
                   data={"chat_id": TG_CHAT_ID, "text": msg, "parse_mode": "Markdown"})
 
-    # 주요 파일 전송
+    # Send Specific Files (Requested: Full Scores, IC Factors, Buy List)
     send_file(buy_list_path, f"📋 {month_str} Buy List (Final)")
-    send_file(scores_path, f"💯 {month_str} Total Scores")
+    send_file(scores_path, f"💯 {month_str} Full Scores")
     send_file(ic_path, f"📈 {month_str} IC Factors")
     
     print(f"✅ Records saved to {base_dir} and sent to Telegram.")
 else:
-    print(f"⚠️ Telegram Token not found. Files saved locally.")
+    print(f"⚠️ Telegram Token not found. Files saved locally at {base_dir}.")
