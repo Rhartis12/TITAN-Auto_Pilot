@@ -9,6 +9,7 @@ import warnings
 import time
 from datetime import datetime
 import json
+
 warnings.filterwarnings("ignore")
 
 # ============================================================
@@ -234,41 +235,95 @@ msg = f"🚀 Titan V6.9.1 Live\nCAGR: {s_p[0]:.2%}\nMDD: {s_p[1]:.2%}\nSharpe: {
 print(msg)
 
 # ============================================================
-# 7. FILE MANAGEMENT & RECORD KEEPING (월별 정리)
+# 7. FILE MANAGEMENT & WEB DASHBOARD DATA
 # ============================================================
-print("💾 Step 5: Archiving Results...")
+print("💾 Step 5: Archiving Results & Generating Dashboard Data...")
 
 today = datetime.now()
 month_str = today.strftime("%Y-%m")      # 예: 2026-01
 date_str = today.strftime("%Y-%m-%d")    # 예: 2026-01-30
 
-# [중요] 최신 Buy List 생성 (alloc 데이터 기반)
+# [중요] 최신 Buy List 생성 (비중 0 초과 종목만)
 latest_weights = alloc.iloc[-1]
 active_weights = latest_weights[latest_weights > 0]
+latest_prices_series = price.iloc[-1] 
+
 buy_list = pd.DataFrame({
     'Ticker': active_weights.index,
     'Weight': active_weights.values,
     'Sector': [SECTOR_MAP.get(t, 'N/A') for t in active_weights.index],
-    'Score': [score.iloc[-1][t] for t in active_weights.index]
+    'Score': [score.iloc[-1][t] for t in active_weights.index],
+    'Price': [latest_prices_series.get(t, 0.0) for t in active_weights.index]
 }).sort_values('Weight', ascending=False)
 
-# 결과 저장 폴더 생성 (results/2026-01/)
+# 📂 폴더 생성 (results/2026-01/)
 base_dir = f"results/{month_str}"
 os.makedirs(base_dir, exist_ok=True)
 
-# 파일 경로 정의
+# 📄 파일 경로 정의
 buy_list_path = f"{base_dir}/Buy_List_{date_str}.csv"
 scores_path = f"{base_dir}/Full_Scores_{date_str}.csv"
+ic_path = f"{base_dir}/IC_Factors_{date_str}.csv"
 weights_path = f"{base_dir}/Weights_{date_str}.csv"
 returns_path = f"{base_dir}/Returns_{date_str}.csv"
 
-# 파일 저장
+# 💾 CSV 파일 저장 (기록용)
 buy_list.to_csv(buy_list_path, index=False)
 score.to_csv(scores_path)
+ic_df.to_csv(ic_path)
 w_final.to_csv(weights_path)
 final_ret.to_csv(returns_path)
 
-# 텔레그램 파일 전송 함수
+# ------------------------------------------------------------
+# 🌍 JSON Data Generation (For HTML Dashboard)
+# ------------------------------------------------------------
+# 1. 현재 국면 정보
+last_r_z = macro_z.iloc[-1]['RATE']
+last_c_z = macro_z.iloc[-1]['CPI']
+
+if (last_r_z > Z_THRESH) and (last_c_z > Z_THRESH): current_regime = "Stagflation"
+elif (last_r_z < -Z_THRESH): current_regime = "Recession"
+elif (last_r_z > Z_THRESH) and (last_c_z < 0): current_regime = "Overheat"
+else: current_regime = "Normal"
+
+# 2. 포트폴리오 리스트 변환
+portfolio_json = []
+for idx, row in buy_list.iterrows():
+    portfolio_json.append({
+        "ticker": row['Ticker'],
+        "sector": row['Sector'],
+        "price": row['Price'],
+        "weight": row['Weight']
+    })
+
+# 3. 팩터 비중
+current_factor_weights = w_final.iloc[-1].to_dict()
+
+# 4. JSON 생성
+web_data = {
+    "date": date_str,
+    "regime": {
+        "status": current_regime,
+        "rate_z": round(last_r_z, 2),
+        "cpi_z": round(last_c_z, 2)
+    },
+    "weights": current_factor_weights,
+    "portfolio": portfolio_json
+}
+
+# [🚨 핵심 수정] 웹사이트가 읽을 수 있게 Root 폴더에도 저장
+with open("dashboard_data.json", "w") as f:
+    json.dump(web_data, f, indent=4)
+
+# 기록용 폴더에도 저장
+with open(f"{base_dir}/dashboard_data.json", "w") as f:
+    json.dump(web_data, f, indent=4)
+
+print("✅ Dashboard JSON generated.")
+
+# ------------------------------------------------------------
+# 📨 Telegram Notification
+# ------------------------------------------------------------
 def send_file(path, caption):
     url = f"https://api.telegram.org/bot{TG_TOKEN}/sendDocument"
     try:
@@ -277,16 +332,16 @@ def send_file(path, caption):
     except Exception as e:
         print(f"❌ File upload failed ({path}): {e}")
 
-# 리밸런싱 요약 메시지 전송
 if TG_TOKEN and TG_CHAT_ID:
+    # 메시지 전송
     requests.post(f"https://api.telegram.org/bot{TG_TOKEN}/sendMessage", 
                   data={"chat_id": TG_CHAT_ID, "text": msg, "parse_mode": "Markdown"})
 
-    # 월별 파일 전송
+    # 주요 파일 전송
     send_file(buy_list_path, f"📋 {month_str} Buy List (Final)")
-    send_file(weights_path, f"⚖️ {month_str} Regime Weights")
     send_file(scores_path, f"💯 {month_str} Total Scores")
+    send_file(ic_path, f"📈 {month_str} IC Factors")
     
     print(f"✅ Records saved to {base_dir} and sent to Telegram.")
 else:
-    print(f"⚠️ Telegram Token not found. Files saved locally at {base_dir}.")
+    print(f"⚠️ Telegram Token not found. Files saved locally.")
