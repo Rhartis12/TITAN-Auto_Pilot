@@ -25,12 +25,20 @@ jobs:
         run: |
           pip install pandas numpy yfinance fredapi scipy lxml requests openpyxl
 
-      - name: Run Titan Strategy
+# ... (앞부분 동일) ...
+      - name: Run Titan Strategy (US)
         env:
           FRED_KEY: ${{ secrets.FRED_KEY }}
           TG_TOKEN: ${{ secrets.TG_TOKEN }}
           TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
         run: python main.py
+
+      - name: Run Titan Strategy (KR)
+        env:
+          ECOS_KEY: ${{ secrets.ECOS_KEY }} # 직접 입력하거나 secrets에 추가
+          TG_TOKEN: ${{ secrets.TG_TOKEN }}
+          TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
+        run: python main_kr.py
 
       # [디버깅용] 파일이 진짜 생겼는지 리스트 확인
       - name: Check Generated Files
