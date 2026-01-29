@@ -19,11 +19,11 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.10'
+          python-version: '3.11'
 
       - name: Install dependencies
         run: |
-          pip install pandas numpy yfinance fredapi scipy lxml requests openpyxl FinanceDataReader
+          pip install pandas numpy yfinance fredapi scipy lxml requests openpyxl Finance-DataReader
 
 # ... (앞부분 동일) ...
       - name: Run Titan Strategy (US)
