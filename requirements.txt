@@ -5,3 +5,5 @@ fredapi
 scipy
 lxml
 requests
+openpyxl
+finance-datareader
