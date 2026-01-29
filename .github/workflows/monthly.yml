@@ -23,7 +23,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install pandas numpy yfinance fredapi scipy lxml requests openpyxl
+          pip install pandas numpy yfinance fredapi scipy lxml requests openpyxl FinanceDataReader
 
 # ... (앞부분 동일) ...
       - name: Run Titan Strategy (US)
