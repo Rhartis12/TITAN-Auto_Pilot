@@ -1,0 +1,43 @@
+name: Titan Monthly Rebalance
+
+on:
+  schedule:
+    # 매월 1일 오전 9시 (한국시간) 실행 = UTC 0시
+    - cron: '0 0 1 * *'
+  workflow_dispatch: # 수동 실행 버튼
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+
+      - name: Install dependencies
+        run: |
+          pip install pandas numpy yfinance fredapi scipy lxml requests
+
+      - name: Run Strategy
+        env:
+          FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
+          TG_TOKEN: ${{ secrets.TG_TOKEN }}
+          TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_REPOSITORY_OWNER: ${{ github.repository_owner }}
+        run: python main.py
+
+      - name: Commit and Push Data
+        run: |
+          git config --global user.name "TitanBot"
+          git config --global user.email "bot@titan.com"
+          git add Buy_List.csv Full_Scores.csv IC_Factors.csv dashboard_data.json
+          git commit -m "📈 Monthly Update: $(date +'%Y-%m-%d')" || exit 0
+          git push
