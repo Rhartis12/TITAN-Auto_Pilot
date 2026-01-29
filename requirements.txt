@@ -6,4 +6,4 @@ scipy
 lxml
 requests
 openpyxl
-finance-datareader
+financedatareader
