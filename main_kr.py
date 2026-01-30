@@ -63,25 +63,45 @@ cpi_series = fetch_ecos_long("901Y009", "0", "198001")
 # 3. PRICE & SECTOR LOADING (Modified)
 # ============================================================
 print("🔄 Loading Stock Data...")
+
+# 1. KRX 전체 리스트 조회 (종목명 매핑용)
 df_krx = fdr.StockListing('KRX')
+
+# [중요] 나중에 JSON 생성 시 사용할 '티커:종목명' 딕셔너리 생성
+# 예: {'005930': '삼성전자', '000660': 'SK하이닉스'}
+NAME_MAP = df_krx.set_index('Code')['Name'].to_dict()
+
+# 2. KOSPI 시총 상위 200개 선정
 df_kospi = df_krx[df_krx['Market'] == 'KOSPI'].sort_values('Marcap', ascending=False).head(200)
 tickers = [f"{code}.KS" for code in df_kospi['Code']]
 
-# [수정] 섹터 정보를 yfinance에서 직접 가져옴
-print("   - Fetching Sectors from YFinance (Slow)...")
+# [수정] 섹터 정보: yfinance 우선 -> 실패 시 FDR 정보 사용 (하이브리드)
+print(f"   - Fetching Sectors for {len(tickers)} tickers...")
 sector_map = {}
+
+# FDR 섹터 정보 백업 (yfinance 실패 대비)
+fdr_sectors = df_kospi.set_index('Code')['Sector'].to_dict()
+
 for i, t in enumerate(tickers):
+    pure_code = t.replace('.KS', '') # 005930.KS -> 005930
+    
     try:
-        # yfinance에서 섹터 정보 조회
+        # 1순위: yfinance (글로벌 표준 섹터명)
         info = yf.Ticker(t).info
         sec = info.get('sector', 'Unknown')
+        
+        # yfinance가 비어있거나 Unknown이면 FDR(한국표준) 사용
+        if sec == 'Unknown' or sec is None:
+            sec = fdr_sectors.get(pure_code, 'Unknown')
+            
         sector_map[t] = sec
     except:
-        sector_map[t] = 'Unknown'
+        # 에러 시 FDR 정보 사용
+        sector_map[t] = fdr_sectors.get(pure_code, 'Unknown')
     
-    # 차단 방지를 위한 딜레이 및 로그
+    # 진행률 표시
     if i % 50 == 0: print(f"     ... {i}/{len(tickers)}")
-    time.sleep(0.1)
+    time.sleep(0.05) # 차단 방지용 미세 딜레이
 
 # Price Download
 price = yf.download(tickers, start=START_DATE, progress=False)['Close']
