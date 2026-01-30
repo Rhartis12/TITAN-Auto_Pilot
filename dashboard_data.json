@@ -1,8 +1,8 @@
 {
-    "date": "2026-01-29",
+    "date": "2026-01-30",
     "regime": {
         "status": "Normal",
-        "rate_z": 0.22,
+        "rate_z": 0.28,
         "cpi_z": -0.68
     },
     "weights": {
@@ -15,19 +15,19 @@
         {
             "ticker": "AAPL",
             "sector": "Tech",
-            "price": 256.44000244140625,
+            "price": 258.2799987792969,
             "weight": 0.3333333333333333
         },
         {
             "ticker": "GOOG",
             "sector": "Tech",
-            "price": 336.2799987792969,
+            "price": 338.6600036621094,
             "weight": 0.3333333333333333
         },
         {
             "ticker": "MSFT",
             "sector": "Tech",
-            "price": 481.6300048828125,
+            "price": 433.5,
             "weight": 0.3333333333333333
         }
     ]
