@@ -274,16 +274,29 @@ for name, f_df in FACTORS.items():
 alloc = pd.DataFrame(0.0, index=score.index, columns=score.columns)
 
 # Allocation Fix: Ensure 100% Invested
+# Allocation Fix: Ensure 100% Invested (Score Weighted)
 for t in score.index:
     daily_picks = []
+    # 1. 섹터별로 상위 20% 종목 수집
     for s in univ["GICS Sector"].unique():
         cols = [c for c in score.columns if SECTOR_MAP.get(c) == s]
         sub = score.loc[t, cols].dropna()
         if not sub.empty:
             picks = sub[sub >= sub.quantile(1 - 0.2)].index.tolist()
             daily_picks.extend(picks)
+            
+    # 2. 비중 할당 (점수 비중 적용)
     if daily_picks:
-        alloc.loc[t, daily_picks] = 1.0 / len(daily_picks)
+        # 선정된 종목들의 점수 가져오기
+        current_scores = score.loc[t, daily_picks]
+        total_score = current_scores.sum()
+        
+        if total_score > 0:
+            # [핵심] 내 점수 / 전체 점수 합계 = 내 비중
+            alloc.loc[t, daily_picks] = current_scores / total_score
+        else:
+            # 안전장치: 점수 합이 0이면 균등 배분
+            alloc.loc[t, daily_picks] = 1.0 / len(daily_picks)
 
 # Backtest Stats Calculation
 port_ret = (alloc.shift(1).fillna(0) * ret).sum(axis=1)
