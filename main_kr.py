@@ -65,43 +65,60 @@ cpi_series = fetch_ecos_long("901Y009", "0", "198001")
 print("🔄 Loading Stock Data...")
 
 # 1. KRX 전체 리스트 조회 (종목명 매핑용)
-df_krx = fdr.StockListing('KRX')
+try:
+    df_krx = fdr.StockListing('KRX')
+    # '티커:종목명' 딕셔너리 (예: '005930': '삼성전자')
+    NAME_MAP = df_krx.set_index('Code')['Name'].to_dict()
+    # FDR 섹터 정보 백업 (yfinance 실패 시 최후의 수단)
+    fdr_sectors = df_krx.set_index('Code')['Sector'].to_dict()
+except Exception as e:
+    print(f"⚠️ KRX Listing Error: {e}")
+    NAME_MAP = {}
+    fdr_sectors = {}
 
-# [중요] 나중에 JSON 생성 시 사용할 '티커:종목명' 딕셔너리 생성
-# 예: {'005930': '삼성전자', '000660': 'SK하이닉스'}
-NAME_MAP = df_krx.set_index('Code')['Name'].to_dict()
-
-# 2. KOSPI 시총 상위 200개 선정
+# 2. KOSPI 시총 상위 200개 선정 (FDR 사용)
+# KOSPI 데이터가 없으면 전체에서 필터링
 df_kospi = df_krx[df_krx['Market'] == 'KOSPI'].sort_values('Marcap', ascending=False).head(200)
 tickers = [f"{code}.KS" for code in df_kospi['Code']]
 
-# [수정] 섹터 정보: yfinance 우선 -> 실패 시 FDR 정보 사용 (하이브리드)
-print(f"   - Fetching Sectors for {len(tickers)} tickers...")
+# [수정] yfinance 섹터 강제 조회 로직
+print(f"   - Fetching Sectors for {len(tickers)} tickers from yfinance...")
 sector_map = {}
 
-# FDR 섹터 정보 백업 (yfinance 실패 대비)
-fdr_sectors = df_kospi.set_index('Code')['Sector'].to_dict()
-
 for i, t in enumerate(tickers):
-    pure_code = t.replace('.KS', '') # 005930.KS -> 005930
+    pure_code = t.replace('.KS', '')
     
+    # 1순위: yfinance (글로벌 표준 섹터명)
+    yf_sector = None
     try:
-        # 1순위: yfinance (글로벌 표준 섹터명)
-        info = yf.Ticker(t).info
-        sec = info.get('sector', 'Unknown')
+        ticker_obj = yf.Ticker(t)
+        # fast_info는 네트워크 요청을 줄이고 더 빠름 (최신 yfinance 기능)
+        # 하지만 섹터 정보는 여전히 .info에 있을 수 있음. 우선순위 체크.
         
-        # yfinance가 비어있거나 Unknown이면 FDR(한국표준) 사용
-        if sec == 'Unknown' or sec is None:
-            sec = fdr_sectors.get(pure_code, 'Unknown')
-            
-        sector_map[t] = sec
-    except:
-        # 에러 시 FDR 정보 사용
-        sector_map[t] = fdr_sectors.get(pure_code, 'Unknown')
-    
-    # 진행률 표시
-    if i % 50 == 0: print(f"     ... {i}/{len(tickers)}")
-    time.sleep(0.05) # 차단 방지용 미세 딜레이
+        # 1. .info 접근 (네트워크 요청 발생)
+        info = ticker_obj.info
+        yf_sector = info.get('sector')
+        
+    except Exception:
+        yf_sector = None
+
+    # 2. 결과 처리
+    if yf_sector and yf_sector != "Unknown":
+        # yfinance 성공
+        sector_map[t] = yf_sector
+        # 로그가 너무 많으면 주석 처리하세요
+        # print(f"     [YF] {t}: {yf_sector}") 
+    else:
+        # yfinance 실패 시 -> FDR 정보 사용 (백업)
+        fdr_sec = fdr_sectors.get(pure_code, 'Unknown')
+        sector_map[t] = fdr_sec
+        print(f"     ⚠️ [FDR Fallback] {t}: YF failed -> Using {fdr_sec}")
+
+    # 차단 방지 딜레이 (yfinance 연속 호출 시 필수)
+    if i % 10 == 0: 
+        print(f"     ... Processed {i}/{len(tickers)}")
+    time.sleep(0.2) # 딜레이를 조금 더 주어(0.2초) 안정성 확보
+
 
 # Price Download
 price = yf.download(tickers, start=START_DATE, progress=False)['Close']
