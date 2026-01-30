@@ -10,7 +10,7 @@ import time
 from datetime import datetime
 import json
 from io import StringIO # 추가됨
-
+import FinanceDataReader as fdr
 warnings.filterwarnings("ignore")
 
 # ============================================================
@@ -82,17 +82,70 @@ def fetch_sec_eps(tickers):
     return None
 
 # ============================================================
-# 3. UNIVERSE & PRICE LOADING
+# 3. UNIVERSE & PRICE LOADING (수정됨)
 # ============================================================
 def get_sp500_tickers():
+    METADATA_FILE = "sp500_metadata.csv"
+    
+    # 1. 캐시 확인
+    if os.path.exists(METADATA_FILE):
+        print(f"✅ Found existing {METADATA_FILE}. Loading...")
+        return pd.read_csv(METADATA_FILE)
+
+    print("🔄 Fetching S&P 500 Ticker List first...")
+    
+    tickers = []
+    sector_backup = {} # 백업용 섹터 정보 (NameError 방지)
+
+    # 2. FDR 시도
     try:
-        url = "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies"
-        headers = {'User-Agent': 'Mozilla/5.0'}
-        df = pd.read_html(requests.get(url, headers=headers).text)[0]
-        df["Symbol"] = df["Symbol"].str.replace(".", "-", regex=False)
-        return df
-    except:
-        return pd.DataFrame({'Symbol': ["AAPL", "MSFT", "GOOG"], 'GICS Sector': ['Tech']*3})
+        df_list = fdr.StockListing('S&P500')
+        tickers = df_list['Symbol'].tolist()
+        if 'Sector' in df_list.columns:
+            sector_backup = df_list.set_index('Symbol')['Sector'].to_dict()
+        print(f"✅ Loaded {len(tickers)} tickers from FinanceDataReader.")
+    except Exception as e1:
+        print(f"⚠️ FDR Failed ({e1}), trying GitHub...")
+        try:
+            url = "https://raw.githubusercontent.com/datasets/s-and-p-500-companies/main/data/constituents.csv"
+            df_git = pd.read_csv(url)
+            tickers = df_git['Symbol'].tolist()
+            if 'GICS Sector' in df_git.columns:
+                sector_backup = df_git.set_index('Symbol')['GICS Sector'].to_dict()
+            print(f"✅ Loaded {len(tickers)} tickers from GitHub.")
+        except Exception as e2:
+            print(f"❌ All fetch methods failed: {e2}")
+            return pd.DataFrame()
+
+    print(f"📡 Querying yfinance for sector info ({len(tickers)} tickers)... This takes time.")
+    
+    # 3. yfinance 정밀 조회
+    data = []
+    for i, t in enumerate(tickers):
+        try:
+            ticker_obj = yf.Ticker(t)
+            # yfinance 섹터 우선 사용
+            sector = ticker_obj.info.get('sector')
+            
+            # yf 실패 시 백업(FDR/GitHub) 사용
+            if not sector or sector == "Unknown":
+                sector = sector_backup.get(t, "Unknown")
+            
+            data.append({"Symbol": t, "GICS Sector": sector})
+            
+        except Exception as e:
+            # 에러 시 백업 사용
+            fallback_sec = sector_backup.get(t, "Unknown")
+            data.append({"Symbol": t, "GICS Sector": fallback_sec})
+        
+        if (i + 1) % 50 == 0:
+            print(f"   ... Processed {i + 1}/{len(tickers)}")
+
+    final_df = pd.DataFrame(data)
+    final_df.to_csv(METADATA_FILE, index=False)
+    print("✅ S&P 500 Metadata Saved with yfinance sectors.")
+    
+    return final_df
 
 print("🔄 Step 1: Loading Market Data...")
 univ = get_sp500_tickers()
