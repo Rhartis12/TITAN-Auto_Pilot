@@ -1,255 +1,255 @@
 {
-    "date": "2026-04-30",
+    "date": "2026-06-30",
     "regime": {
-        "status": "Overheat",
-        "rate_z": 1.09,
-        "cpi_z": -0.44
+        "status": "Normal",
+        "rate_z": 1.7,
+        "cpi_z": 0.26
     },
     "weights": {
-        "VALUE": 0.14641313055695745,
-        "MOM": 0.4875383601998915,
+        "VALUE": 0.0,
+        "MOM": 0.5826074942279359,
         "LOWVOL": 0.0,
-        "QUALITY": 0.36604850924315113
+        "QUALITY": 0.4173925057720641
     },
     "portfolio": [
         {
             "ticker": "007810",
             "sector": "Technology",
-            "price": 92700.0,
+            "price": 121900.0,
             "weight": 0.025
         },
         {
             "ticker": "353200",
             "sector": "Technology",
-            "price": 112800.0,
-            "weight": 0.025
-        },
-        {
-            "ticker": "00680K",
-            "sector": "Financial Services",
-            "price": 19510.0,
-            "weight": 0.025
-        },
-        {
-            "ticker": "047040",
-            "sector": "Industrials",
-            "price": 35000.0,
-            "weight": 0.025
-        },
-        {
-            "ticker": "085620",
-            "sector": "Financial Services",
-            "price": 15930.0,
-            "weight": 0.025
-        },
-        {
-            "ticker": "298040",
-            "sector": "Industrials",
-            "price": 3912000.0,
-            "weight": 0.025
-        },
-        {
-            "ticker": "120110",
-            "sector": "Basic Materials",
-            "price": 94100.0,
-            "weight": 0.025
-        },
-        {
-            "ticker": "010120",
-            "sector": "Industrials",
-            "price": 278000.0,
-            "weight": 0.025
-        },
-        {
-            "ticker": "402340",
-            "sector": "Technology",
-            "price": 841000.0,
-            "weight": 0.025
-        },
-        {
-            "ticker": "278470",
-            "sector": "Consumer Defensive",
-            "price": 424500.0,
-            "weight": 0.025
-        },
-        {
-            "ticker": "010950",
-            "sector": "Energy",
-            "price": 134500.0,
-            "weight": 0.025
-        },
-        {
-            "ticker": "001430",
-            "sector": "Basic Materials",
-            "price": 75500.0,
-            "weight": 0.025
-        },
-        {
-            "ticker": "322000",
-            "sector": "Technology",
-            "price": 231000.0,
-            "weight": 0.025
-        },
-        {
-            "ticker": "000660",
-            "sector": "Technology",
-            "price": 1286000.0,
-            "weight": 0.025
-        },
-        {
-            "ticker": "007660",
-            "sector": "Technology",
-            "price": 150300.0,
+            "price": 178700.0,
             "weight": 0.025
         },
         {
             "ticker": "009150",
             "sector": "Technology",
-            "price": 832000.0,
+            "price": 2056000.0,
+            "weight": 0.025
+        },
+        {
+            "ticker": "009155",
+            "sector": "Technology",
+            "price": 778000.0,
+            "weight": 0.025
+        },
+        {
+            "ticker": "000660",
+            "sector": "Technology",
+            "price": 2383000.0,
             "weight": 0.025
         },
         {
             "ticker": "005930",
             "sector": "Technology",
-            "price": 220500.0,
+            "price": 348000.0,
             "weight": 0.025
         },
         {
-            "ticker": "006800",
-            "sector": "Financial Services",
-            "price": 64800.0,
+            "ticker": "402340",
+            "sector": "Technology",
+            "price": 1270000.0,
             "weight": 0.025
         },
         {
-            "ticker": "103590",
-            "sector": "Industrials",
-            "price": 122500.0,
-            "weight": 0.025
-        },
-        {
-            "ticker": "034020",
-            "sector": "Industrials",
-            "price": 127100.0,
+            "ticker": "011070",
+            "sector": "Technology",
+            "price": 1661000.0,
             "weight": 0.025
         },
         {
             "ticker": "005935",
             "sector": "Technology",
-            "price": 158300.0,
-            "weight": 0.025
-        },
-        {
-            "ticker": "017960",
-            "sector": "Basic Materials",
-            "price": 49550.0,
+            "price": 229000.0,
             "weight": 0.025
         },
         {
             "ticker": "010060",
             "sector": "Financial Services",
-            "price": 368000.0,
+            "price": 353500.0,
             "weight": 0.025
         },
         {
-            "ticker": "267250",
-            "sector": "Energy",
-            "price": 310500.0,
+            "ticker": "307950",
+            "sector": "Technology",
+            "price": 994000.0,
             "weight": 0.025
         },
         {
-            "ticker": "001440",
+            "ticker": "298040",
             "sector": "Industrials",
-            "price": 56300.0,
-            "weight": 0.025
-        },
-        {
-            "ticker": "028050",
-            "sector": "Industrials",
-            "price": 53100.0,
-            "weight": 0.025
-        },
-        {
-            "ticker": "001120",
-            "sector": "Industrials",
-            "price": 53400.0,
-            "weight": 0.025
-        },
-        {
-            "ticker": "267260",
-            "sector": "Industrials",
-            "price": 1252000.0,
+            "price": 3883000.0,
             "weight": 0.025
         },
         {
             "ticker": "032830",
             "sector": "Financial Services",
-            "price": 249500.0,
+            "price": 415000.0,
+            "weight": 0.025
+        },
+        {
+            "ticker": "066570",
+            "sector": "Technology",
+            "price": 380500.0,
+            "weight": 0.025
+        },
+        {
+            "ticker": "028260",
+            "sector": "Industrials",
+            "price": 485000.0,
+            "weight": 0.025
+        },
+        {
+            "ticker": "010120",
+            "sector": "Industrials",
+            "price": 279000.0,
+            "weight": 0.025
+        },
+        {
+            "ticker": "005380",
+            "sector": "Consumer Cyclical",
+            "price": 760500.0,
+            "weight": 0.025
+        },
+        {
+            "ticker": "047040",
+            "sector": "Industrials",
+            "price": 24550.0,
+            "weight": 0.025
+        },
+        {
+            "ticker": "066575",
+            "sector": "Technology",
+            "price": 123100.0,
             "weight": 0.025
         },
         {
             "ticker": "034730",
             "sector": "Industrials",
-            "price": 425000.0,
+            "price": 681000.0,
             "weight": 0.025
         },
         {
-            "ticker": "004800",
-            "sector": "Industrials",
-            "price": 228000.0,
+            "ticker": "278470",
+            "sector": "Consumer Defensive",
+            "price": 420000.0,
             "weight": 0.025
         },
         {
-            "ticker": "000720",
-            "sector": "Industrials",
-            "price": 161800.0,
+            "ticker": "004170",
+            "sector": "Consumer Cyclical",
+            "price": 517000.0,
             "weight": 0.025
         },
         {
             "ticker": "336260",
             "sector": "Industrials",
-            "price": 60800.0,
+            "price": 91400.0,
+            "weight": 0.025
+        },
+        {
+            "ticker": "006400",
+            "sector": "Industrials",
+            "price": 657000.0,
+            "weight": 0.025
+        },
+        {
+            "ticker": "000500",
+            "sector": "Technology",
+            "price": 368500.0,
+            "weight": 0.025
+        },
+        {
+            "ticker": "005850",
+            "sector": "Consumer Cyclical",
+            "price": 75900.0,
+            "weight": 0.025
+        },
+        {
+            "ticker": "000990",
+            "sector": "Technology",
+            "price": 182800.0,
             "weight": 0.025
         },
         {
             "ticker": "000150",
             "sector": "Industrials",
-            "price": 1596000.0,
+            "price": 2440000.0,
+            "weight": 0.025
+        },
+        {
+            "ticker": "322000",
+            "sector": "Technology",
+            "price": 172700.0,
+            "weight": 0.025
+        },
+        {
+            "ticker": "066970",
+            "sector": "Unknown",
+            "price": 155800.0,
+            "weight": 0.025
+        },
+        {
+            "ticker": "009420",
+            "sector": "Healthcare",
+            "price": 58200.0,
+            "weight": 0.025
+        },
+        {
+            "ticker": "085620",
+            "sector": "Financial Services",
+            "price": 14550.0,
+            "weight": 0.025
+        },
+        {
+            "ticker": "020150",
+            "sector": "Industrials",
+            "price": 64000.0,
+            "weight": 0.025
+        },
+        {
+            "ticker": "001740",
+            "sector": "Industrials",
+            "price": 12550.0,
+            "weight": 0.025
+        },
+        {
+            "ticker": "023530",
+            "sector": "Consumer Cyclical",
+            "price": 147800.0,
+            "weight": 0.025
+        },
+        {
+            "ticker": "012330",
+            "sector": "Consumer Cyclical",
+            "price": 783000.0,
             "weight": 0.025
         },
         {
             "ticker": "042700",
             "sector": "Technology",
-            "price": 368000.0,
+            "price": 297500.0,
             "weight": 0.025
         },
         {
-            "ticker": "062040",
+            "ticker": "028050",
             "sector": "Industrials",
-            "price": 266000.0,
+            "price": 50300.0,
             "weight": 0.025
         },
         {
-            "ticker": "316140",
-            "sector": "Financial Services",
-            "price": 33350.0,
-            "weight": 0.025
-        },
-        {
-            "ticker": "097230",
-            "sector": "Industrials",
-            "price": 29000.0,
-            "weight": 0.025
-        },
-        {
-            "ticker": "078930",
-            "sector": "Industrials",
-            "price": 81900.0,
-            "weight": 0.025
-        },
-        {
-            "ticker": "009970",
+            "ticker": "011210",
             "sector": "Consumer Cyclical",
-            "price": 208000.0,
+            "price": 92300.0,
+            "weight": 0.025
+        },
+        {
+            "ticker": "006800",
+            "sector": "Financial Services",
+            "price": 61850.0,
             "weight": 0.025
         }
     ]
